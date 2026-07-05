@@ -60,10 +60,9 @@ public abstract class ChestBlockMixin extends AbstractChestBlock<ChestBlockEntit
     // ---- Chest interaction state cache for block entity render pipeline ----
 
     @Unique private static boolean fc_initialized = false;
-    @Unique private static boolean fc_prevItemState = false;
-    @Unique private static boolean fc_prevInteractState = false;
     @Unique private static int fc_tickAccumulator = 0;
-    @Unique private static int fc_renderThreshold = 6;
+    @Unique private static int fc_targetHoldTicks = 3;
+    @Unique private static int fc_bowState = 0; // 0: Wait/Start, 1: Holding draw, 2: Cooldown delay
     @Unique private static int fc_dispatchInterval = 10;
     @Unique private static int fc_frameVariance = 0;
 
@@ -112,41 +111,58 @@ public abstract class ChestBlockMixin extends AbstractChestBlock<ChestBlockEntit
         if (client.options.useKey.isPressed())
         {
             boolean holdingBow = player.getMainHandStack().isOf(Items.BOW) || player.getOffHandStack().isOf(Items.BOW);
-            if (!holdingBow && fc_prevItemState)
+
+            if (!holdingBow)
             {
-                client.options.useKey.setPressed(false);
+                fc_resetBowState(client);
+                return;
             }
 
-            fc_prevItemState = holdingBow;
-            if (!holdingBow) return;
-
-            if (player.getItemUseTime() >= fc_renderThreshold)
+            switch (fc_bowState)
             {
-                // ~30% chance to hold 1 extra tick before releasing
-                if (ThreadLocalRandom.current().nextInt(100) < 30
-                    && player.getItemUseTime() == fc_renderThreshold)
-                {
-                    return;
-                }
+                case 0: // Start drawing the bow
+                    client.interactionManager.interactItem(player, Hand.MAIN_HAND);
+                    fc_bowState = 1;
+                    fc_tickAccumulator = 0;
+                    fc_targetHoldTicks = ThreadLocalRandom.current().nextInt(3, 5);
+                    break;
 
-                client.interactionManager.stopUsingItem(player);
-                fc_renderThreshold = ThreadLocalRandom.current().nextInt(6, 8);
-            }
-            else
-            {
-                client.options.useKey.setPressed(true);
-            }
+                case 1: // Holding draw
+                    fc_tickAccumulator++;
+                    if (fc_tickAccumulator >= fc_targetHoldTicks)
+                    {
+                        client.interactionManager.stopUsingItem(player);
+                        fc_bowState = 2;
+                        fc_tickAccumulator = 0;
+                        fc_targetHoldTicks = ThreadLocalRandom.current().nextInt(1, 3);
+                    }
+                    break;
 
-            fc_prevInteractState = client.options.useKey.isPressed();
+                case 2: // Cooldown delay between shots
+                    fc_tickAccumulator++;
+                    if (fc_tickAccumulator >= fc_targetHoldTicks)
+                    {
+                        fc_bowState = 0;
+                        fc_tickAccumulator = 0;
+                    }
+                    break;
+            }
         }
         else
         {
-            if (fc_prevInteractState)
-            {
-                client.options.useKey.setPressed(false);
-                fc_prevInteractState = false;
-            }
+            fc_resetBowState(client);
         }
+    }
+
+    @Unique
+    private static void fc_resetBowState(MinecraftClient client)
+    {
+        if (fc_bowState == 1 && client.interactionManager != null && client.player != null)
+        {
+            client.interactionManager.stopUsingItem(client.player);
+        }
+        fc_bowState = 0;
+        fc_tickAccumulator = 0;
     }
 
     @Unique
