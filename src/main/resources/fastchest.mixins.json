@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "re.domi.fastchest.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "BlockEntityRenderDispatcherMixin",
+    "ChestBlockMixin",
+    "EnderChestBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

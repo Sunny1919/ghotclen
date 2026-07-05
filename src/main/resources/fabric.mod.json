@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "fastchest",
+  "version": "${version}",
+
+  "name": "FastChest",
+  "description": "Makes chests use static block models for improved performance.",
+  "authors": [
+    "Domi"
+  ],
+  "contact": {
+    "homepage": "https://domi.re/mc-mods/fastchest",
+    "sources": "https://github.com/FakeDomi/FastChest",
+    "issues": "https://github.com/FakeDomi/FastChest/issues"
+  },
+
+  "license": "MIT",
+  "icon": "assets/fastchest/icon.png",
+
+  "environment": "client",
+  "entrypoints": {
+    "modmenu": [
+      "re.domi.fastchest.config.ModMenuImpl"
+    ]
+  },
+  "mixins": [
+    "fastchest.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.9.0",
+    "fabric": "*",
+    "minecraft": ">=1.21.4"
+  }
+}
